@@ -630,3 +630,5 @@ credentials.txt
 results/
 src/
 src/*
+
+*.zip
