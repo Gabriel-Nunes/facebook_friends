@@ -1,11 +1,13 @@
 from distutils.command.config import config
 import os
+import re
 from time import sleep
 from random import choice
 import requests
 from time import sleep
 from random import choice
 from numpy import arange
+import selenium
 from tqdm import tqdm
 from . import config
 from modules.utils import normaliza
@@ -34,39 +36,50 @@ class FriendsPage:
     def __init__(self, driver):
         self.driver = driver
         self.url = config.FRIENDS_URL
+        self.target_id = config.TARGET_ID
+        self.target_name = config.target_name
         self.results = []
 
     def fsleep(self):
         sleep(choice(arange(0.5, 2.5, 0.1)))
 
     def navigate(self):
-        print(f'\nGetting target\'s friends page...')
+        print(f'\nFetching target\'s friends page...')
         sleep(3)
         self.driver.get('{}{}/friends'.format(config.BASE_URL, config.TARGET_ID))
 
+    # Get the number of target's friends
+    def _get_number_of_friends(self):
+        number_of_friends_tag = self.driver.find_element(By.XPATH, f"//a[@href='https://www.facebook.com/profile.php?id={config.TARGET_ID}&sk=friends'][1]")
+        number_of_friends_text = number_of_friends_tag.text
+        return int(re.sub(r"(\samigos.*|\sfriends.*)", "", number_of_friends_text)) - 1  # Facebook always show one friend more
+
     # Expands and render all friends page
     def show_friends(self):
-        friends_link = self.driver.find_element(By.XPATH, "//a[text()='Amigos' or text()='Friends']")
-        friends_link.click()
-        os.system('cls')
-        sleep(2)
-        os.system('cls')
-        print('\nRendering results page. Please wait...')
+        try:
+            self.driver.get(f"{config.FRIENDS_URL}")
+            os.system('cls')
+            sleep(2)
+            os.system('cls')
+            print('\nRendering results page. Please wait...')
+            num_friends = self._get_number_of_friends()
+            while True:
+                self.fsleep()
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                # Try to fetch the last friend box
+                try:
+                    self._get_friends_boxes()[num_friends]
+                    break
+                except:
+                    pass
+        except:
+            print(f"Friends of - {config.TARGET_ID} - {config.target_name} - may not be available for you!")
 
-        while True:
-            self.fsleep()
-            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            try:
-                self.driver.find_element(By.XPATH, "//a[text()='Check-ins']")
-                break
-            except:
-                pass
-    
     # Save all friends elements into a list
     def _get_friends_boxes(self):
         self.fsleep()
         friends_boxes = self.driver.find_elements(By.XPATH, config.FRIENDS_BOXES)
-        return friends_boxes
+        return friends_boxes[:-1]  # Facebook shows one friend more
 
     def _get_friend_name(self, box):
         self.fsleep()
@@ -87,7 +100,10 @@ class FriendsPage:
     def _get_friend_id(self, box):
         try:
             link_id = box.find_element(By.XPATH, './/div[2]/div/a').get_attribute('href')
-            id = link_id.strip('https://www.facebook.com/rofile.php?id=')
+            if 'id=' in link_id:
+                id = link_id.replace('https://www.facebook.com/profile.php?id=', '')
+            else:
+                id = link_id.replace('https://www.facebook.com/', '')
             return id
         except:
             pass
@@ -96,9 +112,13 @@ class FriendsPage:
         return config.BASE_URL + self._get_friend_id(box)
 
     def _get_target_profile_name(self):
-        config.target_name = self.driver.find_element(By.XPATH, '//h1').text
-        config.target_name = normaliza(config.target_name)
-        return config.target_name
+        try:
+            config.target_name = self.driver.find_element(By.XPATH, '//h1').text
+            config.target_name = normaliza(config.target_name)
+            return config.target_name
+        except:
+            print("Profile locked!")
+            return ''
 
     # Get all friends data
     def get_all_data(self):
@@ -109,18 +129,22 @@ class FriendsPage:
         print('\nExtraindo dados...')
 
         # Parse all results into a iterable
-        for box in tqdm(friends_boxes[:-1]):  # the last element is not a friend
+        for box in tqdm(friends_boxes):
             try:
+                friend_name = self._get_friend_name(box)  # Friend name
+                friend_id = self._get_friend_id(box)  # Friend id
+                # Path to downloaded friend's image
+                friend_image = 'images\\{}_{}.jpg'.format(friend_name.replace(' ', '_'), friend_id)
+                friend_url = self._get_friend_url(box)  # Friend's profile url
+                friend_img_src = self._get_friend_img_src(box)  # Friend's profile image link
                 results_list.append([config.TARGET_ID,
                                      target_name,
-                                     'facebook_friends',  # relationship
-                                     self._get_friend_name(box),  # Friend name
-                                     self._get_friend_id(box),  # Friend id
-                                     # self._get_friend_work(box),  # Friend details (i.e. "Works at...")
-                                     'images\\{}_{}.jpg'.format(self._get_friend_name(box).replace(' ', '_'),
-                                                                self._get_friend_id(box)),  # Friend image path
-                                     self._get_friend_url(box),  # Friends url
-                                     self._get_friend_img_src(box)])  # Friends image url
+                                     'facebook_friends',
+                                     friend_name,  
+                                     friend_id,
+                                     friend_image,
+                                     friend_url,
+                                     friend_img_src])
             except:
                 pass
         self.results = results_list
