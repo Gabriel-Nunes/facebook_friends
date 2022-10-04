@@ -14,43 +14,53 @@ from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 
 
-class Facebook:
-    def __init__(self, driver):
-        self.driver = driver
-        self.url = config.BASE_URL
-        self.target_id = ''
-
-    # TODO create test for login
-    def login(self):
-        print('\nAuthenticating...')
-        self.driver.get(config.BASE_URL)
-        sleep(1)
-        
-    def _get_target_id(self):
-        sleep(2)
-        os.system('cls')
-        # config.TARGET_ID = input('\nEnter target\'s "profile name" or "ID": ')
-        config.FRIENDS_URL = f'https://www.facebook.com/{config.TARGET_ID}/friends'
-        return config.TARGET_ID
-
-
 class Friend:
-    def __ini__(self, name: str, id: str, profile_url: str, image_url: str):
+    def __init__(self, name: str, id: str, profile_url: str, image_url: str):
         self.id = id
         self.name = name
         self.profile_url = profile_url
         self.image_url = image_url
 
 
-class FriendsPage:
+class Facebook:
+    base_url = 'https://www.facebook.com/'
+    
+    def __init__(self, driver):
+        self.driver = driver
+        self.target_id = ''
+
+    # TODO create test for login
+    def login(self):
+        print('\nAuthenticating...')
+        self.driver.get(self.base_url)
+        sleep(1)
+        
+    def get_target_id(self):
+        sleep(2)
+        os.system('cls')
+        config.TARGET_ID = input('\nEnter target\'s "profile name" or "ID": ')
+        config.FRIENDS_URL = f'{self.base_url}{config.TARGET_ID}/friends'
+        return config.TARGET_ID
+
+
+class FriendsPage(Facebook):
     def __init__(self, driver):
         self.driver = driver
         self.url = config.FRIENDS_URL
         self.target_id = config.TARGET_ID
         self.target_name = config.target_name
         self.results = []
-        self.friends_box = self.driver.find_element(By.XPATH, "//a[text()='Amigos' or text()='Friends']/../../../../../../../div[3]")
+        self.friends_box = self.driver.find_element(By.XPATH, config.FRIENDS_BOX)
         self.friends_box_html = ''
+    
+    def _get_target_profile_name(self):
+        try:
+            config.target_name = self.driver.find_element(By.XPATH, '//h1').text
+            config.target_name = normaliza(config.target_name)
+            return config.target_name
+        except:
+            print("Profile locked!")
+            return ''
 
     def fsleep(self):
         sleep(choice(arange(0.5, 2.5, 0.1)))
@@ -67,7 +77,7 @@ class FriendsPage:
         return int(re.sub(r"(\samigos.*|\sfriends.*)", "", number_of_friends_text)) - 1  # Facebook always show one friend more
 
     # Expands and render all friends page
-    def show_friends(self):
+    def _show_friends(self):
         try:
             self.driver.get(f"{config.FRIENDS_URL}")
             os.system('cls')
@@ -89,83 +99,41 @@ class FriendsPage:
         except:
             print(f"Friends of - {config.TARGET_ID} - {config.target_name} - may not be available for you!")
 
-    # Save all friends elements into a list
-    def _get_friends_boxes(self):
-        self.fsleep()
-        friends_boxes = self.driver.find_elements(By.XPATH, config.FRIENDS_BOXES)
-        return friends_boxes[:-1]  # Facebook shows one friend more
+    # Parse friends data from an html string
+    def parse_friends(box_string) -> list:
+        html = BeautifulSoup(box_string, 'html.parser')
+        results = []
 
-    def _get_friend_name(self, box):
-        self.fsleep()
-        try:
-            name = box.find_element(By.XPATH, './/div[2]/div/a/span').text
-            return normaliza(name)
-        except:
-            pass
-
-    def _get_friend_img_src(self, box):
-        try:
-            img = box.find_element(By.XPATH, './/img')
-            img_src = img.get_attribute('src')
-            return img_src
-        except:
-            pass
-
-    def _get_friend_id(self, box):
-        try:
-            link_id = box.find_element(By.XPATH, './/div[2]/div/a').get_attribute('href')
+        def get_id(link_id):
             if 'id=' in link_id:
                 id = link_id.replace('https://www.facebook.com/profile.php?id=', '')
             else:
                 id = link_id.replace('https://www.facebook.com/', '')
             return id
-        except:
-            pass
-
-    def _get_friend_url(self, box):
-        return config.BASE_URL + self._get_friend_id(box)
-
-    def _get_target_profile_name(self):
-        try:
-            config.target_name = self.driver.find_element(By.XPATH, '//h1').text
-            config.target_name = normaliza(config.target_name)
-            return config.target_name
-        except:
-            print("Profile locked!")
-            return ''
+        
+        for content in html.contents:
+            try:
+                friend_id = get_id(content.a['href'])
+                friend_name = content.contents[1].span.text
+                friend_profile = content.a['href']
+                friend_image_url = content.img['src']
+                new_friend = Friend(friend_id, friend_name, friend_profile, friend_image_url)
+                results.append(new_friend)
+            except:
+                pass
+        return results
 
     # Get all friends data
     def get_all_data(self):
         self.fsleep()
-        target_name = self._get_target_profile_name()
-        results_list = []
-        friends_boxes = self._get_friends_boxes()
-        print('\nExtraindo dados...')
+        self._show_friends()
+    
+        print('\nExtracting data...')
 
         # Parse all results into a iterable
-        for box in tqdm(friends_boxes):
-            self.fsleep()
-            try:
-                friend_name = self._get_friend_name(box)  # Friend name
-                friend_id = self._get_friend_id(box)  # Friend id
-                # Path to downloaded friend's image
-                friend_image = 'images\\{}_{}.jpg'.format(friend_name.replace(' ', '_'), friend_id)
-                friend_url = self._get_friend_url(box)  # Friend's profile url
-                friend_img_src = self._get_friend_img_src(box)  # Friend's profile image link
-                results_list.append([config.TARGET_ID,
-                                     target_name,
-                                     'facebook_friends',
-                                     friend_name,  
-                                     friend_id,
-                                     friend_image,
-                                     friend_url,
-                                     friend_img_src])
-            except:
-                pass
-        self.results = results_list
-        return self.results
+        self.results = self.parse_friends(self.friends_box_html)
 
-    # Downloads friends images
+    # TODO Downloads friends images using self.results links
     def download_friends_images(self):
         images_folder = config.IMAGES_FOLDER
         # Create images folder

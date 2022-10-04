@@ -33,7 +33,7 @@ if __name__ == '__main__':
     while continua not in ['n', 'N']:
         facebook.get_target_id()
         friends_page.navigate()
-        friends_page.show_friends()
+        # friends_page.show_friends()
         results = FriendsPage(driver).get_all_data()
 
         print('\nRecording results. Wait...\n')
