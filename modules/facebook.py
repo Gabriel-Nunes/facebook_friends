@@ -39,6 +39,8 @@ class FriendsPage:
         self.target_id = config.TARGET_ID
         self.target_name = config.target_name
         self.results = []
+        self.friends_box = self.driver.find_element(By.XPATH, "//a[text()='Amigos' or text()='Friends']/../../../../../../../div[3]")
+        self.friends_box_html = ''
 
     def fsleep(self):
         sleep(choice(arange(0.5, 2.5, 0.1)))
@@ -69,6 +71,8 @@ class FriendsPage:
                 # Try to fetch the last friend box
                 try:
                     self._get_friends_boxes()[num_friends]
+                    self.fsleep()
+                    self.friends_box_html = self.friends_box.get_attribute('innerHTML')
                     break
                 except:
                     pass
@@ -130,6 +134,7 @@ class FriendsPage:
 
         # Parse all results into a iterable
         for box in tqdm(friends_boxes):
+            self.fsleep()
             try:
                 friend_name = self._get_friend_name(box)  # Friend name
                 friend_id = self._get_friend_id(box)  # Friend id
@@ -158,16 +163,18 @@ class FriendsPage:
         # if not os.path.exists(images_folder):
         #     os.makedirs(images_folder)
         friends_boxes = self._get_friends_boxes()
-        for box in tqdm(friends_boxes[:-1]):  # the last element is not a friend
+        for box in tqdm(friends_boxes):
+            friend_name = self._get_friend_name(box)
+            friend_id = self._get_friend_id(box)
             try:
                 img_src = self._get_friend_img_src(box)
                 res = requests.get(img_src)
             except requests.exceptions.InvalidURL:
-                print(f'Image URL {img_src} invalid for friend {self._get_friend_name}')
+                print(f'Image URL {img_src} invalid for friend {friend_name}')
             except requests.exceptions.MissingSchema:
-                print(f'Image URL {img_src} invalid for friend {self._get_friend_name}')
-            with open(os.path.join(images_folder, '{}_{}.jpg'.format(self._get_friend_name(box).replace(' ', '_'),
-                                                                     self._get_friend_id(box))),
+                print(f'Image URL {img_src} invalid for friend {friend_name}')
+            with open(os.path.join(images_folder, '{}_{}.jpg'.format(friend_name.replace(' ', '_'),
+                                                                     friend_id)),
                       mode='wb') as imageFile:
                 for chunk in res.iter_content(100000):
                     imageFile.write(chunk)

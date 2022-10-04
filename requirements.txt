@@ -6,8 +6,6 @@ charset-normalizer==2.1.1
 colorama==0.4.5
 exceptiongroup==1.0.0rc9
 h11==0.14.0
-idna==3.4
-numpy==1.23.3
 outcome==1.2.0
 pycparser==2.21
 PySocks==1.7.1
