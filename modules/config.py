@@ -14,5 +14,6 @@ FRIENDS_PAGE_END='medley_header_photos'  # id da tag que aparece ao final da pá
 
 FRIENDS_BOXES="/html/body/div[1]/div/div[1]/div/div[3]/div/div/div/div[1]/div[1]/div/div/div[4]/div/div/div/div[1]/div/div/div/div/div[3]/div"
 FRIENDS_BOX="//a[text()='Amigos' or text()='Friends']/../../../../../../../div[3]"
+NUM_OF_FRIENDS="/html/body/div[1]/div/div[1]/div/div[3]/div/div/div/div[1]/div[1]/div/div/div[1]/div[2]/div/div/div/div[3]/div/div/div[2]/span"
 RESULTS_FOLDER='results'
 IMAGES_FOLDER=os.path.join(RESULTS_FOLDER, 'images')

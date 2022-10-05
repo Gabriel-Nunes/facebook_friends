@@ -54,6 +54,7 @@ class FriendsPage(Facebook):
         self.results = []
         self.friends_box = ''
         self.friends_box_html = ''
+        self.num_friends = 0
     
     # Get the target profile name from Friends page
     def _get_target_profile_name(self):
@@ -75,11 +76,22 @@ class FriendsPage(Facebook):
         sleep(3)
         self.driver.get(self.url)
 
-    # Get the number of target's friends
-    def _get_number_of_friends(self):
-        number_of_friends_tag = self.driver.find_element(By.XPATH, f"//a[@href='https://www.facebook.com/profile.php?id={config.TARGET_ID}&sk=friends'][1]")
+    # Get the number of target's friends and if the profile is blocked
+    def _get_num_of_friends_and_status(self):
+        number_of_friends_tag = self.driver.find_element(By.XPATH, config.NUM_OF_FRIENDS)
         number_of_friends_text = number_of_friends_tag.text
-        return int(re.sub(r"(\samigos.*|\sfriends.*)", "", number_of_friends_text)) - 1  # Facebook always show one friend more
+        self.num_friends = int(re.sub(r"(\samigos.*|\sfriends.*)", "", number_of_friends_text)) - 1  # Facebook always show one friend more
+        if "amigos em comum" not in number_of_friends_tag.text or "friends in common" not in number_of_friends_text:
+            self.status = 'total or partial blocked'
+            print(f"Friends of - {self.target_id} - {self.target_name} - may not be available for you!")
+        else:
+            self.status = 'unblocked'
+
+    # Save all friends elements into a list
+    def _get_friends_boxes(self):
+        self.fsleep()
+        friends_boxes = self.driver.find_elements(By.XPATH, config.FRIENDS_BOXES)
+        return friends_boxes[:-1]  # Facebook shows one friend more
 
     # Expands and render all friends page
     def _show_friends(self):
@@ -89,20 +101,21 @@ class FriendsPage(Facebook):
             sleep(2)
             os.system('cls')
             print('\nRendering results page. Please wait...')
-            num_friends = self._get_number_of_friends()
-            while True:
+            self._get_num_of_friends_and_status()
+            friends_boxes = self._get_friends_boxes()
+            while len(friends_boxes) != self.num_friends:
                 self.fsleep()
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 # Try to fetch the last friend box
                 try:
-                    self._get_friends_boxes()[num_friends]
+                    friends_boxes = self._get_friends_boxes()
                     self.fsleep()
                     self.friends_box_html = self.friends_box.get_attribute('innerHTML')
                     break
                 except:
                     pass
         except:
-            print(f"Friends of - {config.TARGET_ID} - {config.target_name} - may not be available for you!")
+            print(f"Can't render friends page :(")
 
     # Parse friends data from an html string
     def parse_friends(self, box_string) -> list:
