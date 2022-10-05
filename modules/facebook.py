@@ -17,6 +17,7 @@ class Facebook:
     def __init__(self, driver):
         self.driver = driver
         self.url = config.BASE_URL
+        self.target_id = ''
 
     # TODO create test for login
     def login(self):
@@ -27,15 +28,15 @@ class Facebook:
     def get_target_id(self):
         sleep(2)
         os.system('cls')
-        config.TARGET_ID = input('\nEnter target\'s "profile name" or "ID": ')
+        self.target_id = input('\nEnter target\'s "profile name" or "ID": ')
         config.FRIENDS_URL = f'https://www.facebook.com/{config.TARGET_ID}/friends'
         return config.TARGET_ID
 
 
 class FriendsPage:
-    def __init__(self, driver):
+    def __init__(self, driver, targets_friends_url):
         self.driver = driver
-        self.url = config.FRIENDS_URL
+        self.url = targets_friends_url
         self.target_id = config.TARGET_ID
         self.target_name = config.target_name
         self.results = []

@@ -14,7 +14,7 @@ from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 
 
-class Friend:
+class FacebookUser:
     def __init__(self, name: str, id: str, profile_url: str, image_url: str):
         self.id = id
         self.name = name
@@ -23,11 +23,14 @@ class Friend:
 
 
 class Facebook:
-    base_url = 'https://www.facebook.com/'
+    base_url = 'https://www.facebook.com'
     
     def __init__(self, driver):
         self.driver = driver
-        self.target_id = ''
+        sleep(2)
+        
+        input("Please login on Facebook and press any key to continue...")
+        self.target_id = input('\nEnter target\'s "profile name" or "ID": ')
 
     # TODO create test for login
     def login(self):
@@ -38,37 +41,39 @@ class Facebook:
     def get_target_id(self):
         sleep(2)
         os.system('cls')
-        config.TARGET_ID = input('\nEnter target\'s "profile name" or "ID": ')
-        config.FRIENDS_URL = f'{self.base_url}{config.TARGET_ID}/friends'
+        config.FRIENDS_URL = f'{self.base_url}/{config.TARGET_ID}/friends'
         return config.TARGET_ID
 
 
 class FriendsPage(Facebook):
-    def __init__(self, driver):
+    def __init__(self, driver, target_id):
         self.driver = driver
-        self.url = config.FRIENDS_URL
-        self.target_id = config.TARGET_ID
-        self.target_name = config.target_name
+        self.target_id = target_id
+        self.url = f"{self.base_url}/{target_id}/friends"
+        self.target_name = ''
         self.results = []
-        self.friends_box = self.driver.find_element(By.XPATH, config.FRIENDS_BOX)
+        self.friends_box = ''
         self.friends_box_html = ''
     
+    # Get the target profile name from Friends page
     def _get_target_profile_name(self):
         try:
-            config.target_name = self.driver.find_element(By.XPATH, '//h1').text
-            config.target_name = normaliza(config.target_name)
-            return config.target_name
+            target_name = self.driver.find_element(By.XPATH, '//h1').text
+            self.target_name = normaliza(target_name)
+            return self.target_name
         except:
             print("Profile locked!")
             return ''
 
+    # Set a random interval
     def fsleep(self):
         sleep(choice(arange(0.5, 2.5, 0.1)))
 
+    # Go to target's friends page
     def navigate(self):
         print(f'\nFetching target\'s friends page...')
         sleep(3)
-        self.driver.get('{}{}/friends'.format(config.BASE_URL, config.TARGET_ID))
+        self.driver.get(self.url)
 
     # Get the number of target's friends
     def _get_number_of_friends(self):
@@ -79,7 +84,7 @@ class FriendsPage(Facebook):
     # Expands and render all friends page
     def _show_friends(self):
         try:
-            self.driver.get(f"{config.FRIENDS_URL}")
+            # self.driver.get(f"{self.url}")
             os.system('cls')
             sleep(2)
             os.system('cls')
@@ -100,7 +105,7 @@ class FriendsPage(Facebook):
             print(f"Friends of - {config.TARGET_ID} - {config.target_name} - may not be available for you!")
 
     # Parse friends data from an html string
-    def parse_friends(box_string) -> list:
+    def parse_friends(self, box_string) -> list:
         html = BeautifulSoup(box_string, 'html.parser')
         results = []
 
@@ -117,7 +122,7 @@ class FriendsPage(Facebook):
                 friend_name = content.contents[1].span.text
                 friend_profile = content.a['href']
                 friend_image_url = content.img['src']
-                new_friend = Friend(friend_id, friend_name, friend_profile, friend_image_url)
+                new_friend = FacebookUser(friend_id, friend_name, friend_profile, friend_image_url)
                 results.append(new_friend)
             except:
                 pass
@@ -127,11 +132,12 @@ class FriendsPage(Facebook):
     def get_all_data(self):
         self.fsleep()
         self._show_friends()
-    
         print('\nExtracting data...')
+        self._get_target_profile_name()
 
         # Parse all results into a iterable
         self.results = self.parse_friends(self.friends_box_html)
+        return [[friend.id, friend.name, friend.profile_url, friend.image_url] for friend in self.results]
 
     # TODO Downloads friends images using self.results links
     def download_friends_images(self):
@@ -140,19 +146,15 @@ class FriendsPage(Facebook):
         os.makedirs(images_folder, exist_ok=True)
         # if not os.path.exists(images_folder):
         #     os.makedirs(images_folder)
-        friends_boxes = self._get_friends_boxes()
-        for box in tqdm(friends_boxes):
-            friend_name = self._get_friend_name(box)
-            friend_id = self._get_friend_id(box)
+        # friends_boxes = self._get_friends_boxes()
+        for friend in tqdm(self.results):
             try:
-                img_src = self._get_friend_img_src(box)
-                res = requests.get(img_src)
-            except requests.exceptions.InvalidURL:
-                print(f'Image URL {img_src} invalid for friend {friend_name}')
-            except requests.exceptions.MissingSchema:
-                print(f'Image URL {img_src} invalid for friend {friend_name}')
-            with open(os.path.join(images_folder, '{}_{}.jpg'.format(friend_name.replace(' ', '_'),
-                                                                     friend_id)),
-                      mode='wb') as imageFile:
-                for chunk in res.iter_content(100000):
-                    imageFile.write(chunk)
+                res = requests.get(friend.image_url)
+                with open(os.path.join(images_folder, '{}_{}.jpg'.format(friend.name(' ', '_'),
+                                                                        friend.id)),
+                        mode='wb') as imageFile:
+                    for chunk in res.iter_content(100000):
+                        imageFile.write(chunk)
+            except requests.exceptions.ConnectionError:
+                print(f"{friend.name}'s image not found.\n")
+                pass
