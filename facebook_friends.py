@@ -8,13 +8,13 @@ import os
 import csv
 
 # Keep console on top right (OS Windows)
-# if 'posix' not in os.name:
-#     import win32gui, win32con
+if 'posix' not in os.name:
+    import win32gui, win32con
 
-#     windowList = []
-#     win32gui.EnumWindows(lambda hwnd, windowList: windowList.append((win32gui.GetWindowText(hwnd),hwnd)), windowList)
-#     cmdWindow = [i for i in windowList if "python" in i[0].lower()]
-#     win32gui.SetWindowPos(cmdWindow[0][1],win32con.HWND_TOP,800,0,600,350,0) #100,100 is the size of the window
+    windowList = []
+    win32gui.EnumWindows(lambda hwnd, windowList: windowList.append((win32gui.GetWindowText(hwnd),hwnd)), windowList)
+    cmdWindow = [i for i in windowList if "python" in i[0].lower()]
+    win32gui.SetWindowPos(cmdWindow[0][1],win32con.HWND_TOP,800,0,600,350,0) #100,100 is the size of the window
 
 if __name__ == '__main__':
 
@@ -23,11 +23,13 @@ if __name__ == '__main__':
     browser = Browser()
     driver = browser.driver
     driver.get("https://www.facebook.com")
-    facebook = Facebook(driver)
+    sleep(2)
+    input("Please login on Facebook and press any key to continue...")
     os.system(clear_screen)
     continua = ''
     while continua not in ['n', 'N']:
-        friends_page = FriendsPage(driver, facebook.target_id)
+        facebook = Facebook(driver)
+        friends_page = FriendsPage(driver, facebook.target_id, facebook.target_name)
         friends_page.navigate()
         # friends_page.show_friends()
         friends = friends_page.get_all_data()
@@ -35,13 +37,24 @@ if __name__ == '__main__':
         print('\nRecording results. Wait...\n')
         # create results folder
         os.makedirs(config.RESULTS_FOLDER, exist_ok=True)
-        with open(os.path.join(config.RESULTS_FOLDER, 'friends_{}_{}.csv'.format(config.target_name, config.TARGET_ID)), mode='w', newline='',
+        # TODO change target name to facebook class
+        with open(os.path.join(config.RESULTS_FOLDER, 'friends_{}_{}.csv'.format(friends_page.target_name, friends_page.target_id)), mode='w', newline='',
                   encoding='utf-8') as file:
-            headers = ['target_id', 'target_name', 'link_name', 'friend_name', 'friend_id', 
+            headers = ['target_id', 'target_name', 'link_name', 'friend_id', 'friend_name', 
                        'friend_image', 'url_friend_profile', 'url_friend_image']
             writer = csv.writer(file)
             writer.writerow(headers)
-            writer.writerows(friends)
+            for friend in friends:
+                image_uri = os.path.join('images', '{}_{}.jpg'.format(friend.name.replace(' ', '_'),
+                                                                        friend.id))
+                writer.writerow([facebook.target_id, 
+                                friends_page.target_name, 
+                                'facebook friends', 
+                                friend.id,
+                                friend.name,
+                                image_uri,
+                                friend.profile_url,
+                                friend.image_url])
 
         print('\nData file generated!\n\n')
         sleep(2)
