@@ -79,9 +79,9 @@ class FriendsPage(Facebook):
     # Get the number of target's friends and if the profile is blocked
     def _get_num_of_friends_and_status(self):
         number_of_friends_tag = self.driver.find_element(By.XPATH, config.NUM_OF_FRIENDS)
-        number_of_friends_text = number_of_friends_tag.text
-        self.num_friends = int(re.sub(r"(\samigos.*|\sfriends.*)", "", number_of_friends_text)) - 1  # Facebook always show one friend more
-        if "amigos em comum" in number_of_friends_tag.text or "friends in common" in number_of_friends_text:
+        # number_of_friends_text = number_of_friends_tag.text.replace(',', '.')
+        # self.num_friends = int(re.sub(r"(\samigos.*|\sfriends.*)", "", number_of_friends_text)) - 1  # Facebook always show one friend more
+        if "amigos em comum" in number_of_friends_tag.text or "friends in common" in number_of_friends_tag.text:
             self.status = 'total or partial blocked'
             print(f"'Warning: Friends of - {self.target_id} - {self.target_name} - may not be available for you!'")
         else:
