@@ -8,13 +8,13 @@ import os
 import csv
 
 # Keep console on top right (OS Windows)
-# if 'posix' not in os.name:
-#     import win32gui, win32con
-
-#     windowList = []
-#     win32gui.EnumWindows(lambda hwnd, windowList: windowList.append((win32gui.GetWindowText(hwnd),hwnd)), windowList)
-#     cmdWindow = [i for i in windowList if "python" in i[0].lower()]
-#     win32gui.SetWindowPos(cmdWindow[0][1],win32con.HWND_TOP,800,0,600,350,0) #100,100 is the size of the window
+ #if 'posix' not in os.name:
+ #    import win32gui, win32con
+ #
+ #    windowList = []
+ #    win32gui.EnumWindows(lambda hwnd, windowList: windowList.append((win32gui.GetWindowText(hwnd),hwnd)), windowList)
+ #    cmdWindow = [i for i in windowList if "python" in i[0].lower()]
+ #    win32gui.SetWindowPos(cmdWindow[0][1],win32con.HWND_TOP,800,0,600,350,0) #100,100 is the size of the window
 
 if __name__ == '__main__':
 

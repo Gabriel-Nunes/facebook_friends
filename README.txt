@@ -1,27 +1,39 @@
-# facebookFriends
+## facebook_friends
 
-Pré-requisitos:
+#### Overview
 
-# Usar uma conta do Facebook "sem dupla camada de segurança"
+This program use a Chrome portable version to crawl a Facebook profile (only the available data).
 
-Instruções:
+#### Dependencies:
 
-1 - Antes de executar o programa, salvar usuário e senha do Facebook em "credentials.txt".
-    Ex:
-    usuario@gmail.com
-    senha12345
-2 - Executar "FbFriendsWindows.exe"
-3 - Após a autenticação, é normal o alerta "Stop! This is a browser feature...". Não há risco de segurança.
-3 - Após o alerta, inserir o ID (ou nome de usuário FB) do alvo. 
+- Python 3.x ("https://www.python.org/downloads")
 
-IMPORTANTE: o comando copiar/colar pode dar erro. Neste caso, basta digitar o 'user name'
+> OBS: on Windows, make sure to check the option "add Python to Windows PATH"
 
-4 - O programa faz automaticamente a renderização oculta da página de amigos (o que pode
-demorar) e a extração dos dados.
-6 - Os dados são salvos na mesma pasta do programa.
-7 - Caso o programa encerre inesperadamente, verifique sua conexão, desative firewalls e anti-vírus (se houver).
+#### Running the program
 
-Programa desenvolvido em Python com o uso das ferramentas 'Selenium' e 'chromedriver'.
-sugestões/melhorias/código-fonte:
-gabriel.gln@pf.gov.br
+- Windows
 
+1. Run "install.bat".
+2. After cmd window shutdown, run "facebook_friends.bat".
+3. Follow the instructions on screen.
+
+- Linux
+
+Create and activate a virtual python environment:
+
+	python3 -m venv venv
+	source venv/bin/activate	
+
+Install python dependencies:
+
+	pip install -r requirements
+
+Run the crawler:
+
+	python facebook_friends.py
+
+- Notes:
+
+1. The program can be finished anytime pressing "ctrl" + "c"
+2. The profiles may be crawled one by one avoiding Facebook's blocking.
