@@ -1,6 +1,6 @@
 from modules.facebook import Facebook
 # from modules.facebook import FriendsPage
-from modules.facebook_bs4 import Facebook, FriendsPage
+from modules.facebook import Facebook, FriendsPage
 from modules.browser import Browser
 from time import sleep
 from modules import config
